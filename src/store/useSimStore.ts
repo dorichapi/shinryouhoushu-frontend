@@ -8,9 +8,9 @@ import { simulateClinic, type SimulationResponse } from "@/lib/api";
 export interface FormData {
   clinicName: string;
   specialty: string;
-  staffCount: number;
-  monthlyInitialVisits: number;
-  monthlyRevisits: number;
+  staffCount: number | "";
+  monthlyInitialVisits: number | "";
+  monthlyRevisits: number | "";
   baseupFiled: boolean;
   filedKasans: string[];
 }
@@ -32,10 +32,10 @@ export const useSimStore = create<SimStore>((set, get) => ({
   formData: {
     clinicName: "",
     specialty: "内科",
-    staffCount: 10,
-    monthlyInitialVisits: 300,
-    monthlyRevisits: 2000,
-    baseupFiled: true,
+    staffCount: "",
+    monthlyInitialVisits: "",
+    monthlyRevisits: "",
+    baseupFiled: false,
     filedKasans: [],
   },
   result: null,
@@ -63,9 +63,9 @@ export const useSimStore = create<SimStore>((set, get) => ({
       const result = await simulateClinic({
         clinic_name: formData.clinicName,
         specialty: formData.specialty,
-        staff_count: formData.staffCount,
-        monthly_initial_visits: formData.monthlyInitialVisits,
-        monthly_revisits: formData.monthlyRevisits,
+        staff_count: formData.staffCount || 1,
+        monthly_initial_visits: formData.monthlyInitialVisits || 0,
+        monthly_revisits: formData.monthlyRevisits || 0,
         baseup_filed: formData.baseupFiled,
         filed_kasans: formData.filedKasans,
       });

@@ -42,7 +42,7 @@ export default function InputPage() {
       alert("クリニック名を入力してください");
       return;
     }
-    if (formData.monthlyInitialVisits === 0 && formData.monthlyRevisits === 0) {
+    if (!formData.monthlyInitialVisits && !formData.monthlyRevisits) {
       alert("月間初診件数または再診件数を入力してください");
       return;
     }
@@ -96,7 +96,7 @@ export default function InputPage() {
                   <Label htmlFor="clinicName">クリニック名</Label>
                   <Input
                     id="clinicName"
-                    placeholder="例: ○○内科クリニック"
+                    placeholder="例：〇〇クリニック"
                     value={formData.clinicName}
                     onChange={(e) =>
                       setFormData({ clinicName: e.target.value })
@@ -128,9 +128,13 @@ export default function InputPage() {
                     type="number"
                     min={1}
                     max={100}
+                    placeholder="例：10"
                     value={formData.staffCount}
                     onChange={(e) =>
-                      setFormData({ staffCount: Number(e.target.value) })
+                      setFormData({
+                        staffCount:
+                          e.target.value === "" ? "" : Number(e.target.value),
+                      })
                     }
                   />
                 </div>
@@ -165,10 +169,12 @@ export default function InputPage() {
                     min={0}
                     max={10000}
                     step={50}
+                    placeholder="例：300"
                     value={formData.monthlyInitialVisits}
                     onChange={(e) =>
                       setFormData({
-                        monthlyInitialVisits: Number(e.target.value),
+                        monthlyInitialVisits:
+                          e.target.value === "" ? "" : Number(e.target.value),
                       })
                     }
                   />
@@ -184,9 +190,13 @@ export default function InputPage() {
                     min={0}
                     max={30000}
                     step={100}
+                    placeholder="例：2000"
                     value={formData.monthlyRevisits}
                     onChange={(e) =>
-                      setFormData({ monthlyRevisits: Number(e.target.value) })
+                      setFormData({
+                        monthlyRevisits:
+                          e.target.value === "" ? "" : Number(e.target.value),
+                      })
                     }
                   />
                   <p className="text-xs text-muted-foreground">
