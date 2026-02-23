@@ -203,7 +203,7 @@ export default function ResultsPage() {
                       tick={{ fill: "#475569" }}
                     />
                     <Tooltip
-                      formatter={(value: number) => `${value.toFixed(1)}万円`}
+                      formatter={(value) => `${Number(value).toFixed(1)}万円`}
                       labelFormatter={(_, payload) => {
                         if (payload?.[0]?.payload?.fullName) {
                           return payload[0].payload.fullName;
