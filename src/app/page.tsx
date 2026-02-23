@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSimStore } from "@/store/useSimStore";
-import { getSpecialties, getKasans } from "@/lib/api";
+import { SPECIALTIES, FILING_KASANS } from "@/lib/constants";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -36,30 +35,7 @@ export default function InputPage() {
     runSimulation,
     loading,
     error,
-    specialties,
-    kasans,
-    setSpecialties,
-    setKasans,
   } = useSimStore();
-
-  // マスターデータの取得
-  useEffect(() => {
-    getSpecialties()
-      .then(setSpecialties)
-      .catch(() => {
-        // フォールバック
-        setSpecialties([
-          "内科", "小児科", "整形外科", "皮膚科", "眼科", "耳鼻咽喉科",
-          "泌尿器科", "産婦人科", "精神科", "外科", "循環器内科",
-          "消化器内科", "呼吸器内科", "糖尿病内科", "総合診療",
-        ]);
-      });
-    getKasans()
-      .then(setKasans)
-      .catch(() => {
-        // フォールバック（空）
-      });
-  }, [setSpecialties, setKasans]);
 
   const handleSubmit = async () => {
     if (!formData.clinicName.trim()) {
@@ -75,23 +51,6 @@ export default function InputPage() {
       router.push("/results");
     }
   };
-
-  // 表示用の加算リスト: APIから取得、filed_kasansに指定可能なもの
-  // _PROFILE_KASAN_MAPに対応する9件のみ（tounyoubyou_toumakuは除外）
-  const VALID_FILING_IDS = new Set([
-    "jikangai_taiou",
-    "chiiki_houkatsu_shinryou",
-    "kansen_taisaku_koujou_3",
-    "seikatsu_shuukan_byou_kanri",
-    "zaitaku_sougoui_kanri",
-    "online_shinryou",
-    "denshi_shinryou_jouhou",
-    "hp_keisai_gimu",
-    "gairai_data_teishutsu",
-  ]);
-  const filingKasans = kasans.filter((k) => VALID_FILING_IDS.has(k.id));
-
-  const specialtyList = specialties.length > 0 ? specialties : ["内科"];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -154,7 +113,7 @@ export default function InputPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {specialtyList.map((s) => (
+                      {SPECIALTIES.map((s) => (
                         <SelectItem key={s} value={s}>
                           {s}
                         </SelectItem>
@@ -276,7 +235,7 @@ export default function InputPage() {
                 既に届出・算定している項目にチェック（未届出の加算が推奨として表示されます）
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {filingKasans.map((k) => (
+                {FILING_KASANS.map((k) => (
                   <div
                     key={k.id}
                     className="flex items-center gap-2.5 p-2.5 rounded-md hover:bg-slate-100 transition-colors"
@@ -296,10 +255,19 @@ export default function InputPage() {
           </Card>
         </motion.div>
 
-        {/* エラー表示 */}
+        {/* エラー表示 + リトライ */}
         {error && (
-          <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-            {error}
+          <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm space-y-3">
+            <p>{error}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-red-300 text-red-700 hover:bg-red-100 cursor-pointer"
+              onClick={handleSubmit}
+              disabled={loading}
+            >
+              再試行
+            </Button>
           </div>
         )}
 
@@ -337,7 +305,7 @@ export default function InputPage() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                   />
                 </svg>
-                シミュレーション実行中...
+                計算中...初回は30秒ほどかかる場合があります
               </span>
             ) : (
               "🔍 シミュレーション実行"

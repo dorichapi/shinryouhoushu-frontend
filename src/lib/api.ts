@@ -50,16 +50,6 @@ export interface SimulationResponse {
   checklist: ChecklistItem[];
 }
 
-export interface KasanInfo {
-  id: string;
-  name: string;
-  category: string;
-  points: string;
-  description: string;
-  difficulty: string;
-  applicable_specialties: string[];
-}
-
 export interface SimulationRequest {
   clinic_name: string;
   specialty: string;
@@ -97,14 +87,6 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export async function getSpecialties(): Promise<string[]> {
-  return fetchJson<string[]>(`${API_BASE}/api/specialties`);
-}
-
-export async function getKasans(): Promise<KasanInfo[]> {
-  return fetchJson<KasanInfo[]>(`${API_BASE}/api/kasans`);
-}
-
 export async function simulateClinic(
   req: SimulationRequest,
 ): Promise<SimulationResponse> {
@@ -112,5 +94,6 @@ export async function simulateClinic(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(req),
+    signal: AbortSignal.timeout(60_000),
   });
 }

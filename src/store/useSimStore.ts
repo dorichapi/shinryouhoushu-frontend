@@ -1,11 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import {
-  simulateClinic,
-  type SimulationResponse,
-  type KasanInfo,
-} from "@/lib/api";
+import { simulateClinic, type SimulationResponse } from "@/lib/api";
 
 /* ── フォームデータ型 ── */
 
@@ -27,14 +23,8 @@ interface SimStore {
   loading: boolean;
   error: string | null;
 
-  // マスターデータ（APIから取得）
-  specialties: string[];
-  kasans: KasanInfo[];
-
   setFormData: (data: Partial<FormData>) => void;
   toggleKasan: (kasanId: string) => void;
-  setSpecialties: (data: string[]) => void;
-  setKasans: (data: KasanInfo[]) => void;
   runSimulation: () => Promise<boolean>;
 }
 
@@ -52,9 +42,6 @@ export const useSimStore = create<SimStore>((set, get) => ({
   loading: false,
   error: null,
 
-  specialties: [],
-  kasans: [],
-
   setFormData: (data) =>
     set((state) => ({
       formData: { ...state.formData, ...data },
@@ -68,9 +55,6 @@ export const useSimStore = create<SimStore>((set, get) => ({
         : [...current, kasanId];
       return { formData: { ...state.formData, filedKasans: next } };
     }),
-
-  setSpecialties: (data) => set({ specialties: data }),
-  setKasans: (data) => set({ kasans: data }),
 
   runSimulation: async () => {
     const { formData } = get();
@@ -88,8 +72,14 @@ export const useSimStore = create<SimStore>((set, get) => ({
       set({ result, loading: false });
       return true;
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "シミュレーションに失敗しました";
+      let message = "シミュレーションに失敗しました";
+      if (err instanceof DOMException && err.name === "TimeoutError") {
+        message = "サーバーの応答がタイムアウトしました。再度お試しください。";
+      } else if (err instanceof TypeError && err.message === "Failed to fetch") {
+        message = "サーバーに接続できません。しばらくしてから再度お試しください。";
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
       set({ error: message, loading: false });
       return false;
     }
