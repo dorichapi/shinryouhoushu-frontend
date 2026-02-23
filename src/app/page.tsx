@@ -1,65 +1,354 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { motion } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useSimStore } from "@/store/useSimStore";
+import { getSpecialties, getKasans } from "@/lib/api";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.12, duration: 0.5, ease: "easeOut" },
+  }),
+};
+
+export default function InputPage() {
+  const router = useRouter();
+  const {
+    formData,
+    setFormData,
+    toggleKasan,
+    runSimulation,
+    loading,
+    error,
+    specialties,
+    kasans,
+    setSpecialties,
+    setKasans,
+  } = useSimStore();
+
+  // マスターデータの取得
+  useEffect(() => {
+    getSpecialties()
+      .then(setSpecialties)
+      .catch(() => {
+        // フォールバック
+        setSpecialties([
+          "内科", "小児科", "整形外科", "皮膚科", "眼科", "耳鼻咽喉科",
+          "泌尿器科", "産婦人科", "精神科", "外科", "循環器内科",
+          "消化器内科", "呼吸器内科", "糖尿病内科", "総合診療",
+        ]);
+      });
+    getKasans()
+      .then(setKasans)
+      .catch(() => {
+        // フォールバック（空）
+      });
+  }, [setSpecialties, setKasans]);
+
+  const handleSubmit = async () => {
+    if (!formData.clinicName.trim()) {
+      alert("クリニック名を入力してください");
+      return;
+    }
+    if (formData.monthlyInitialVisits === 0 && formData.monthlyRevisits === 0) {
+      alert("月間初診件数または再診件数を入力してください");
+      return;
+    }
+    const ok = await runSimulation();
+    if (ok) {
+      router.push("/results");
+    }
+  };
+
+  // 表示用の加算リスト: APIから取得、filed_kasansに指定可能なもの
+  // _PROFILE_KASAN_MAPに対応する9件のみ（tounyoubyou_toumakuは除外）
+  const VALID_FILING_IDS = new Set([
+    "jikangai_taiou",
+    "chiiki_houkatsu_shinryou",
+    "kansen_taisaku_koujou_3",
+    "seikatsu_shuukan_byou_kanri",
+    "zaitaku_sougoui_kanri",
+    "online_shinryou",
+    "denshi_shinryou_jouhou",
+    "hp_keisai_gimu",
+    "gairai_data_teishutsu",
+  ]);
+  const filingKasans = kasans.filter((k) => VALID_FILING_IDS.has(k.id));
+
+  const specialtyList = specialties.length > 0 ? specialties : ["内科"];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-slate-50">
+      {/* ── ヒーローヘッダー ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="bg-gradient-to-r from-[#1B4F72] via-[#2471A3] to-[#3498DB] text-white py-12 px-6"
+      >
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
+            🏥 診療報酬改定シミュレーター 2026
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-blue-100 text-base md:text-lg font-medium">
+            2026年6月施行 診療報酬改定（本体+3.09%）の収入影響を試算 |
+            診療所・中小病院向け無料ツール
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      </motion.div>
+
+      {/* ── フォーム ── */}
+      <div className="max-w-3xl mx-auto px-4 py-10 space-y-6">
+        {/* Step 1: 基本情報 */}
+        <motion.div
+          custom={0}
+          initial="hidden"
+          animate="visible"
+          variants={fadeUp}
+        >
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold">
+                  1
+                </span>
+                基本情報
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="clinicName">クリニック名</Label>
+                  <Input
+                    id="clinicName"
+                    placeholder="例: ○○内科クリニック"
+                    value={formData.clinicName}
+                    onChange={(e) =>
+                      setFormData({ clinicName: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>診療科</Label>
+                  <Select
+                    value={formData.specialty}
+                    onValueChange={(v) => setFormData({ specialty: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {specialtyList.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="staffCount">常勤換算職員数</Label>
+                  <Input
+                    id="staffCount"
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={formData.staffCount}
+                    onChange={(e) =>
+                      setFormData({ staffCount: Number(e.target.value) })
+                    }
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Step 2: 月間患者数 */}
+        <motion.div
+          custom={1}
+          initial="hidden"
+          animate="visible"
+          variants={fadeUp}
+        >
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold">
+                  2
+                </span>
+                月間患者数
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="initial">月間初診件数</Label>
+                  <Input
+                    id="initial"
+                    type="number"
+                    min={0}
+                    max={10000}
+                    step={50}
+                    value={formData.monthlyInitialVisits}
+                    onChange={(e) =>
+                      setFormData({
+                        monthlyInitialVisits: Number(e.target.value),
+                      })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    月間の初診料算定件数
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="revisits">月間再診件数</Label>
+                  <Input
+                    id="revisits"
+                    type="number"
+                    min={0}
+                    max={30000}
+                    step={100}
+                    value={formData.monthlyRevisits}
+                    onChange={(e) =>
+                      setFormData({ monthlyRevisits: Number(e.target.value) })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    月間の再診料算定件数
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Step 3: 届出状況 */}
+        <motion.div
+          custom={2}
+          initial="hidden"
+          animate="visible"
+          variants={fadeUp}
+        >
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold">
+                  3
+                </span>
+                現在の届出・算定状況
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                <Checkbox
+                  id="baseup"
+                  checked={formData.baseupFiled}
+                  onCheckedChange={(v) =>
+                    setFormData({ baseupFiled: v === true })
+                  }
+                />
+                <Label
+                  htmlFor="baseup"
+                  className="text-sm font-medium cursor-pointer"
+                >
+                  ベースアップ評価料(I) 届出済み（6点→17点に増点）
+                </Label>
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                既に届出・算定している項目にチェック（未届出の加算が推奨として表示されます）
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {filingKasans.map((k) => (
+                  <div
+                    key={k.id}
+                    className="flex items-center gap-2.5 p-2.5 rounded-md hover:bg-slate-100 transition-colors"
+                  >
+                    <Checkbox
+                      id={k.id}
+                      checked={formData.filedKasans.includes(k.id)}
+                      onCheckedChange={() => toggleKasan(k.id)}
+                    />
+                    <Label htmlFor={k.id} className="text-sm cursor-pointer">
+                      {k.name}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* エラー表示 */}
+        {error && (
+          <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* 実行ボタン */}
+        <motion.div
+          custom={3}
+          initial="hidden"
+          animate="visible"
+          variants={fadeUp}
+        >
+          <Button
+            size="lg"
+            className="w-full py-6 text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 shadow-lg cursor-pointer disabled:opacity-70"
+            onClick={handleSubmit}
+            disabled={loading}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <svg
+                  className="animate-spin h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+                シミュレーション実行中...
+              </span>
+            ) : (
+              "🔍 シミュレーション実行"
+            )}
+          </Button>
+        </motion.div>
+
+        <p className="text-xs text-center text-muted-foreground pb-8">
+          本ツールの試算結果は概算であり、実際の収入額を保証するものではありません。
+        </p>
+      </div>
     </div>
   );
 }
